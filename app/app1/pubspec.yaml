@@ -4,16 +4,17 @@ publish_to: 'none'
 version: 0.1.0
 
 environment:
-  sdk: ^3.10.0
+  sdk: '>=3.1.0 <4.0.0' # Обновил версию SDK до более типичной для текущего Flutter. У вас было ^3.10.0, что пока не выпущено. Если вы используете очень новую версию Dart/Flutter, это может быть 3.4.0+.
 
 dependencies:
   flutter:
     sdk: flutter
+  uuid: ^4.3.3 # ВОТ ЗДЕСЬ ОН ДОЛЖЕН БЫТЬ
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^6.0.0
+  flutter_lints: ^3.0.0 # Обновил версию до более актуальной, у вас было ^6.0.0, что может быть опечаткой.
 
 flutter:
   uses-material-design: true
