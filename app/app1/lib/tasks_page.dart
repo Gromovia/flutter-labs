@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:uuid/uuid.dart'; // Убедитесь, что зависимость добавлена в pubspec.yaml и выполнен flutter pub get
-import 'task_model.dart'; // Импорт модели Task
-import 'add_task_page.dart'; // Импорт страницы добавления/редактирования
+import 'package:provider/provider.dart';
+import 'task_model.dart';
+import 'add_task_page.dart';
+import 'viewmodels/task_viewmodel.dart'; // Новый импорт
 
 class TasksPage extends StatefulWidget {
   const TasksPage({super.key});
@@ -11,28 +12,17 @@ class TasksPage extends StatefulWidget {
 }
 
 class _TasksPageState extends State<TasksPage> {
-  // Создаем один экземпляр Uuid для этого класса
-  final Uuid _uuid = const Uuid();
-
-  late List<Task> _tasks; // Объявляем late, инициализируем в initState
-
   @override
   void initState() {
     super.initState();
-    // Инициализация тестовыми задачами с использованием _uuid
-    _tasks = [
-      Task(id: _uuid.v4(), title: 'Купить продукты', description: 'Молоко, хлеб, яйца', dueDate: DateTime.now().add(const Duration(days: 1))),
-      Task(id: _uuid.v4(), title: 'Сделать домашнее задание', description: 'По Flutter и Lisp', dueDate: DateTime.now().add(const Duration(hours: 3))),
-      Task(id: _uuid.v4(), title: 'Позвонить маме', description: '', dueDate: DateTime.now().add(const Duration(days: 5)), isCompleted: true),
-      Task(id: _uuid.v4(), title: 'Прочитать книгу', description: 'Глава 3', isCompleted: true),
-    ];
+    // Загружаем задачи через ViewModel
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<TaskViewModel>().loadTasks();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    List<Task> activeTasks = _tasks.where((task) => !task.isCompleted).toList();
-    List<Task> completedTasks = _tasks.where((task) => task.isCompleted).toList();
-
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -44,46 +34,65 @@ class _TasksPageState extends State<TasksPage> {
         ),
         centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row( // Изменено на Row
-          crossAxisAlignment: CrossAxisAlignment.start, // Выравниваем списки по верху
-          children: [
-            Expanded(
-              child: _buildTaskList(
-                context,
-                'Активные задачи',
-                activeTasks,
-                Colors.blue,
-                showEdit: true,
-                showCheckbox: true,
+      body: Consumer<TaskViewModel>(
+        builder: (context, viewModel, child) {
+          if (viewModel.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (viewModel.errorMessage != null) {
+            return Center(
+              child: Text(
+                'Ошибка: ${viewModel.errorMessage}',
+                style: const TextStyle(color: Colors.red),
               ),
+            );
+          }
+
+          List<Task> activeTasks = viewModel.tasks.where((task) => !task.isCompleted).toList();
+          List<Task> completedTasks = viewModel.tasks.where((task) => task.isCompleted).toList();
+
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: _buildTaskList(
+                    context,
+                    'Активные задачи',
+                    activeTasks,
+                    Colors.blue,
+                    showEdit: true,
+                    showCheckbox: true,
+                    viewModel: viewModel,
+                  ),
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: _buildTaskList(
+                    context,
+                    'Завершенные задачи',
+                    completedTasks,
+                    Colors.green,
+                    showEdit: false,
+                    showCheckbox: false,
+                    viewModel: viewModel,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 20), // Горизонтальный отступ между списками
-            Expanded(
-              child: _buildTaskList(
-                context,
-                'Завершенные задачи',
-                completedTasks,
-                Colors.green,
-                showEdit: false,
-                showCheckbox: false,
-              ),
-            ),
-          ],
-        ),
+          );
+        },
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           final newTask = await Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => AddTaskPage()),
+            MaterialPageRoute(builder: (context) => const AddTaskPage()),
           );
           if (newTask != null && newTask is Task) {
-            setState(() {
-              _tasks.add(newTask);
-            });
+            context.read<TaskViewModel>().addTask(newTask);
           }
         },
         label: const Text('Добавить новую задачу'),
@@ -101,6 +110,7 @@ class _TasksPageState extends State<TasksPage> {
     Color titleColor, {
     required bool showEdit,
     required bool showCheckbox,
+    required TaskViewModel viewModel,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -119,7 +129,7 @@ class _TasksPageState extends State<TasksPage> {
               ? Center(
                   child: Text(
                     'Здесь пока пусто.',
-                    style: TextStyle(color: Colors.white70),
+                    style: const TextStyle(color: Colors.white70),
                   ),
                 )
               : ListView.builder(
@@ -134,9 +144,7 @@ class _TasksPageState extends State<TasksPage> {
                             ? Checkbox(
                                 value: task.isCompleted,
                                 onChanged: (bool? value) {
-                                  setState(() {
-                                    task.isCompleted = value ?? false;
-                                  });
+                                  viewModel.toggleTaskCompletion(task.id);
                                 },
                                 activeColor: Colors.blue,
                                 checkColor: Colors.white,
@@ -178,21 +186,14 @@ class _TasksPageState extends State<TasksPage> {
                                     ),
                                   );
                                   if (updatedTask != null && updatedTask is Task) {
-                                    setState(() {
-                                      final taskIndex = _tasks.indexWhere((t) => t.id == updatedTask.id);
-                                      if (taskIndex != -1) {
-                                        _tasks[taskIndex] = updatedTask;
-                                      }
-                                    });
+                                    viewModel.updateTask(updatedTask);
                                   }
                                 },
                               ),
                             IconButton(
                               icon: const Icon(Icons.delete, color: Colors.red),
                               onPressed: () {
-                                setState(() {
-                                  _tasks.removeWhere((t) => t.id == task.id);
-                                });
+                                viewModel.deleteTask(task.id);
                               },
                             ),
                           ],

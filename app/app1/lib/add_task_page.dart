@@ -1,9 +1,10 @@
+// Без изменений — логика создания/редактирования теперь в ViewModel
 import 'package:flutter/material.dart';
-import 'package:uuid/uuid.dart'; // Убедитесь, что зависимость добавлена в pubspec.yaml и выполнен flutter pub get
-import 'task_model.dart'; // Импорт модели Task
+import 'package:uuid/uuid.dart';
+import 'task_model.dart';
 
 class AddTaskPage extends StatefulWidget {
-  final Task? taskToEdit; // Опциональный параметр для редактирования
+  final Task? taskToEdit;
 
   const AddTaskPage({super.key, this.taskToEdit});
 
@@ -16,14 +17,11 @@ class _AddTaskPageState extends State<AddTaskPage> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   DateTime? _selectedDueDate;
-
-  // Создаем один экземпляр Uuid для этого класса
   final Uuid _uuid = const Uuid();
 
   @override
   void initState() {
     super.initState();
-    // Если есть задача для редактирования, заполняем поля
     if (widget.taskToEdit != null) {
       _titleController.text = widget.taskToEdit!.title;
       _descriptionController.text = widget.taskToEdit!.description;
@@ -48,14 +46,14 @@ class _AddTaskPageState extends State<AddTaskPage> {
         return Theme(
           data: ThemeData.dark().copyWith(
             colorScheme: const ColorScheme.dark(
-              primary: Colors.blue, // Цвет кнопки "OK" и выделения
-              onPrimary: Colors.white, // Цвет текста на кнопке "OK"
-              surface: Colors.grey, // Фон календаря
-              onSurface: Colors.white, // Цвет текста в календаре
+              primary: Colors.blue,
+              onPrimary: Colors.white,
+              surface: Colors.grey,
+              onSurface: Colors.white,
             ),
             textButtonTheme: TextButtonThemeData(
               style: TextButton.styleFrom(
-                foregroundColor: Colors.blue, // Цвет кнопок "CANCEL", "OK"
+                foregroundColor: Colors.blue,
               ),
             ),
           ),
@@ -87,23 +85,21 @@ class _AddTaskPageState extends State<AddTaskPage> {
             onPressed: () {
               if (_formKey.currentState!.validate()) {
                 if (widget.taskToEdit == null) {
-                  // Создание новой задачи
                   final newTask = Task(
-                    id: _uuid.v4(), // ИСПРАВЛЕНО: удален const
+                    id: _uuid.v4(),
                     title: _titleController.text,
                     description: _descriptionController.text,
                     dueDate: _selectedDueDate,
                     isCompleted: false,
                   );
-                  Navigator.pop(context, newTask); // Возвращаем новую задачу
+                  Navigator.pop(context, newTask);
                 } else {
-                  // Редактирование существующей задачи
                   final updatedTask = widget.taskToEdit!.copyWith(
                     title: _titleController.text,
                     description: _descriptionController.text,
                     dueDate: _selectedDueDate,
                   );
-                  Navigator.pop(context, updatedTask); // Возвращаем обновленную задачу
+                  Navigator.pop(context, updatedTask);
                 }
               }
             },
@@ -115,7 +111,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0), // ИСПРАВЛЕНО
+        padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: Column(

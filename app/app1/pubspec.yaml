@@ -1,25 +1,27 @@
 name: app1
 description: "A new Flutter project."
 publish_to: 'none'
-version: 0.1.0
+version: 1.0.0+1
 
 environment:
-  sdk: '>=3.1.0 <4.0.0' # Обновил версию SDK до более типичной для текущего Flutter. У вас было ^3.10.0, что пока не выпущено. Если вы используете очень новую версию Dart/Flutter, это может быть 3.4.0+.
+  sdk: '>=3.4.0 <4.0.0'  # Поднял версию для совместимости с новыми Flutter (если ваш SDK новее 3.1.0)
 
 dependencies:
   flutter:
     sdk: flutter
-  uuid: ^4.3.3 # ВОТ ЗДЕСЬ ОН ДОЛЖЕН БЫТЬ
-  sqflite: ^2.3.2
-  path: ^1.9.0
+  provider: ^6.0.5
+  dio: ^5.3.2
+  sqflite: ^2.3.0
+  sqflite_common_ffi: ^2.3.0  # Уже добавлена — хорошо!
+  path: ^1.8.3
   path_provider: ^2.1.2
-  http: ^1.2.0
-  shared_preferences: ^2.2.2
+  uuid: ^4.2.1  # Оставил, если используется для генерации ID задач
+  # Удалил http и shared_preferences — они не нужны, если вы используете Dio и Sqflite
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^3.0.0 # Обновил версию до более актуальной, у вас было ^6.0.0, что может быть опечаткой.
+  flutter_lints: ^4.0.0  # Обновил до актуальной версии для лучших линтов
 
 flutter:
   uses-material-design: true
