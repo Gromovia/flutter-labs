@@ -10,6 +10,11 @@ dependencies:
   flutter:
     sdk: flutter
   uuid: ^4.3.3 # ВОТ ЗДЕСЬ ОН ДОЛЖЕН БЫТЬ
+  sqflite: ^2.3.2
+  path: ^1.9.0
+  path_provider: ^2.1.2
+  http: ^1.2.0
+  shared_preferences: ^2.2.2
 
 dev_dependencies:
   flutter_test:
