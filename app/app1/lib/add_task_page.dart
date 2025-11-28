@@ -1,7 +1,6 @@
-// Без изменений — логика создания/редактирования теперь в ViewModel
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
-import 'task_model.dart';
+import 'task_model.dart'; // Убедитесь, что этот импорт ведет к вашему TaskModel
 
 class AddTaskPage extends StatefulWidget {
   final Task? taskToEdit;
@@ -17,7 +16,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   DateTime? _selectedDueDate;
-  final Uuid _uuid = const Uuid();
+  final Uuid _uuid = const Uuid(); // Uuid может быть не нужен, если ID генерируется в ViewModel
 
   @override
   void initState() {
@@ -40,7 +39,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _selectedDueDate ?? DateTime.now(),
-      firstDate: DateTime(2000),
+      firstDate: DateTime(2000), // Можно установить firstDate как DateTime.now()
       lastDate: DateTime(2101),
       builder: (context, child) {
         return Theme(
@@ -72,57 +71,20 @@ class _AddTaskPageState extends State<AddTaskPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          widget.taskToEdit == null ? 'Новая Задача' : 'Редактировать Задачу',
-          style: const TextStyle(color: Colors.white),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              if (_formKey.currentState!.validate()) {
-                if (widget.taskToEdit == null) {
-                  final newTask = Task(
-                    id: _uuid.v4(),
-                    title: _titleController.text,
-                    description: _descriptionController.text,
-                    dueDate: _selectedDueDate,
-                    isCompleted: false,
-                  );
-                  Navigator.pop(context, newTask);
-                } else {
-                  final updatedTask = widget.taskToEdit!.copyWith(
-                    title: _titleController.text,
-                    description: _descriptionController.text,
-                    dueDate: _selectedDueDate,
-                  );
-                  Navigator.pop(context, updatedTask);
-                }
-              }
-            },
-            child: const Text(
-              'Сохранить',
-              style: TextStyle(color: Colors.blue, fontSize: 16),
-            ),
-          ),
-        ],
+        title: Text(widget.taskToEdit == null ? 'Новая Задача' : 'Редактировать Задачу'),
+        centerTitle: true,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+            crossAxisAlignment: CrossAxisAlignment.start,            children: [
               TextFormField(
                 controller: _titleController,
-                style: const TextStyle(color: Colors.white),
                 decoration: const InputDecoration(
                   labelText: 'Название задачи',
-                  hintText: 'Введите название',
+                  hintText: 'Например, Купить продукты',
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -131,30 +93,50 @@ class _AddTaskPageState extends State<AddTaskPage> {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 16.0),
               TextFormField(
                 controller: _descriptionController,
-                style: const TextStyle(color: Colors.white),
                 decoration: const InputDecoration(
-                  labelText: 'Описание',
-                  hintText: 'Подробное описание задачи (необязательно)',
+                  labelText: 'Описание (необязательно)',
+                  hintText: 'Дополнительная информация о задаче',
                 ),
                 maxLines: 3,
               ),
-              const SizedBox(height: 16),
-              GestureDetector(
-                onTap: () => _selectDate(context),
-                child: AbsorbPointer(
-                  child: TextFormField(
-                    style: const TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      labelText: 'Срок выполнения',
-                      hintText: _selectedDueDate == null
-                          ? 'Выберите дату'
-                          : '${_selectedDueDate!.day}.${_selectedDueDate!.month}.${_selectedDueDate!.year}',
-                      suffixIcon: const Icon(Icons.calendar_today, color: Colors.white70),
-                    ),
+              const SizedBox(height: 16.0),
+              // --- Вот здесь отображается и выбирается дата ---
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(
+                  _selectedDueDate == null
+                      ? 'Дата выполнения (необязательно)'
+                      : 'Срок: ${_selectedDueDate!.day}.${_selectedDueDate!.month}.${_selectedDueDate!.year}',
+                  style: TextStyle(
+                    color: _selectedDueDate == null ? Colors.white70 : Colors.white,
+                    fontSize: 16, // Установим размер побольше
                   ),
+                ),
+                trailing: const Icon(Icons.calendar_today, color: Colors.blue),
+                onTap: () => _selectDate(context),
+              ),
+              // --- Конец секции даты ---
+              const Spacer(), // Заполняет оставшееся пространство
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    if (_formKey.currentState!.validate()) {
+                      final String id = widget.taskToEdit?.id ?? _uuid.v4();
+                      final Task resultTask = Task(
+                        id: id,
+                        title: _titleController.text.trim(),
+                        description: _descriptionController.text.trim(),
+                        dueDate: _selectedDueDate,
+                        isCompleted: widget.taskToEdit?.isCompleted ?? false,
+                      );
+                      Navigator.pop(context, resultTask); // Возвращаем задачу
+                    }
+                  },
+                  child: Text(widget.taskToEdit == null ? 'Добавить Задачу' : 'Сохранить Изменения'),
                 ),
               ),
             ],
