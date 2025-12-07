@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
-import 'task_model.dart'; // Убедитесь, что этот импорт ведет к вашему TaskModel
+import 'task_model.dart'; // убедитесь, что путь правильный
 
 class AddTaskPage extends StatefulWidget {
   final Task? taskToEdit;
@@ -16,7 +16,9 @@ class _AddTaskPageState extends State<AddTaskPage> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   DateTime? _selectedDueDate;
-  final Uuid _uuid = const Uuid(); // Uuid может быть не нужен, если ID генерируется в ViewModel
+  final Uuid _uuid = const Uuid();
+
+  bool _isCompleted = false; // для редактирования статуса задачи
 
   @override
   void initState() {
@@ -25,6 +27,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
       _titleController.text = widget.taskToEdit!.title;
       _descriptionController.text = widget.taskToEdit!.description;
       _selectedDueDate = widget.taskToEdit!.dueDate;
+      _isCompleted = widget.taskToEdit!.isCompleted;
     }
   }
 
@@ -39,7 +42,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _selectedDueDate ?? DateTime.now(),
-      firstDate: DateTime(2000), // Можно установить firstDate как DateTime.now()
+      firstDate: DateTime(2000),
       lastDate: DateTime(2101),
       builder: (context, child) {
         return Theme(
@@ -69,9 +72,11 @@ class _AddTaskPageState extends State<AddTaskPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isEditing = widget.taskToEdit != null;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.taskToEdit == null ? 'Новая Задача' : 'Редактировать Задачу'),
+        title: Text(isEditing ? 'Редактировать задачу' : 'Новая задача'),
         centerTitle: true,
       ),
       body: Padding(
@@ -79,7 +84,8 @@ class _AddTaskPageState extends State<AddTaskPage> {
         child: Form(
           key: _formKey,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,            children: [
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               TextFormField(
                 controller: _titleController,
                 decoration: const InputDecoration(
@@ -103,7 +109,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
                 maxLines: 3,
               ),
               const SizedBox(height: 16.0),
-              // --- Вот здесь отображается и выбирается дата ---
+              // Дата выполнения
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 title: Text(
@@ -112,14 +118,24 @@ class _AddTaskPageState extends State<AddTaskPage> {
                       : 'Срок: ${_selectedDueDate!.day}.${_selectedDueDate!.month}.${_selectedDueDate!.year}',
                   style: TextStyle(
                     color: _selectedDueDate == null ? Colors.white70 : Colors.white,
-                    fontSize: 16, // Установим размер побольше
+                    fontSize: 16,
                   ),
                 ),
                 trailing: const Icon(Icons.calendar_today, color: Colors.blue),
                 onTap: () => _selectDate(context),
               ),
-              // --- Конец секции даты ---
-              const Spacer(), // Заполняет оставшееся пространство
+              const SizedBox(height: 16),
+              // Поле для статуса завершенности
+              SwitchListTile(
+                title: const Text('Задача выполнена'),
+                value: _isCompleted,
+                onChanged: (value) {
+                  setState(() {
+                    _isCompleted = value;
+                  });
+                },
+              ),
+              const Spacer(),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -131,12 +147,12 @@ class _AddTaskPageState extends State<AddTaskPage> {
                         title: _titleController.text.trim(),
                         description: _descriptionController.text.trim(),
                         dueDate: _selectedDueDate,
-                        isCompleted: widget.taskToEdit?.isCompleted ?? false,
+                        isCompleted: _isCompleted,
                       );
                       Navigator.pop(context, resultTask); // Возвращаем задачу
                     }
                   },
-                  child: Text(widget.taskToEdit == null ? 'Добавить Задачу' : 'Сохранить Изменения'),
+                  child: Text(isEditing ? 'Сохранить изменения' : 'Добавить задачу'),
                 ),
               ),
             ],
